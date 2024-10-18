@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
-  const { firstName, lastName, email, password, confirmPassword } = req.body;
+  const { fullName, email, password, confirmPassword } = req.body;
 
   if (password !== confirmPassword) {
     return res.status(400).json({ msg: 'Passwords do not match' });
@@ -22,7 +22,7 @@ exports.register = async (req, res) => {
     try {
       await sendEmail(email, emailSubject, emailText);
 
-      user = new User({ firstName, lastName, email, password, role: 'super_admin', otp });
+      user = new User({ fullName, email, password, role: 'user', otp });
       await user.save();
 
       res.status(200).json({ msg: 'Registration successful. OTP sent to your email.' });
@@ -31,6 +31,34 @@ exports.register = async (req, res) => {
     }
 
   } catch (error) {
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+
+    if (!user.isVerified) return res.status(400).json({ msg: 'Account not verified' });
+
+    const token = jwt.sign({ userId: user._id, name: user.fullName, role: user.role }, process.env.JWT_SECRET);
+
+    res.status(200).json({
+      token,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role, 
+      id: user._id,
+      isVerified: user.isVerified,
+    });
+  } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ msg: 'Server error' });
   }
 };
@@ -63,35 +91,6 @@ exports.verifyOtp = async (req, res) => {
 
     res.status(200).json({ msg: 'OTP verified, account activated' });
   } catch (error) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-};
-
-exports.login = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
-
-    if (!user.isVerified) return res.status(400).json({ msg: 'Account not verified' });
-
-    const token = jwt.sign({ userId: user._id, name: user.firstName, role: user.role }, process.env.JWT_SECRET);
-
-    res.status(200).json({
-      token,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role, 
-      id: user._id,
-      isVerified: user.isVerified,
-    });
-  } catch (error) {
-    console.error('Login error:', error);
     res.status(500).json({ msg: 'Server error' });
   }
 };

@@ -15,7 +15,8 @@ app.use(json());
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:3000",
+  "exp://192.168.43.94:8081",
+  "http://localhost:8081"
 ];
 
 app.use(
@@ -35,7 +36,6 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
