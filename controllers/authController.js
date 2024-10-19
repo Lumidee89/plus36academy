@@ -5,11 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
-  const { fullName, email, password, confirmPassword } = req.body;
-
-  if (password !== confirmPassword) {
-    return res.status(400).json({ msg: 'Passwords do not match' });
-  }
+  const { fullName, email, password } = req.body;
 
   try {
     let user = await User.findOne({ email });
