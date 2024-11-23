@@ -3,11 +3,13 @@ const { json } = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db.js");
 const authRoutes = require("./routes/auth.js");
+const courseRoutes = require("./routes/courseRoutes");
 const authMiddleware = require('./middlewares/authMiddleware');
 const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
+app.use("/uploads", express.static("uploads"));
 
 connectDB();
 
@@ -36,6 +38,7 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
+app.use("/api/courses", courseRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
